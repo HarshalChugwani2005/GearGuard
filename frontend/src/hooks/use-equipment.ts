@@ -75,11 +75,19 @@ export const useEquipment = (id?: number) => {
         queryKey: ['equipment', id],
         queryFn: async () => {
             try {
+                // Add cache buster for cross-machine sync
+                const timestamp = Date.now();
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
                 const url = id
-                    ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/equipment/${id}`
-                    : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/equipment`;
+                    ? `${baseUrl}/api/equipment/${id}?_t=${timestamp}`
+                    : `${baseUrl}/api/equipment?_t=${timestamp}`;
 
-                const { data } = await axios.get(url);
+                const { data } = await axios.get(url, {
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
                 return data as EquipmentWithHealth[] | EquipmentWithHealth;
             } catch (error) {
                 console.warn("Backend unreached, using mock equipment data");
@@ -91,6 +99,8 @@ export const useEquipment = (id?: number) => {
             }
         },
         // Health score changes frequently with live sensors
-        refetchInterval: 5000
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true,
+        staleTime: 0
     });
 };

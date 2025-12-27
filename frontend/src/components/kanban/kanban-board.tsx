@@ -19,14 +19,12 @@ const KanbanBoard = () => {
     // State for requests to support local drag-and-drop updates
     const [localRequests, setLocalRequests] = useState<MaintenanceRequest[]>([]);
 
-    // Sync local requests with fetched data on load
-    // In a real app with React Query mutation, we might rely on the cache invalidation
-    // For this prototype, we'll sync initial and then manage locally to show the effect
+    // Sync local requests with fetched data whenever it changes
     useMemo(() => {
-        if (requests && localRequests.length === 0) {
+        if (requests && requests.length > 0) {
             setLocalRequests(requests);
         }
-    }, [requests]); // Only sync once/if empty to avoid overwriting local changes if polling happens
+    }, [requests])
 
     // Group requests by status
     const columns = useMemo(() => {
@@ -76,6 +74,15 @@ const KanbanBoard = () => {
 
     if (isLoading) {
         return <div className="flex items-center justify-center h-full text-slate-500">Loading Kanban...</div>;
+    }
+
+    if (!requests || requests.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3">
+                <p className="text-lg">No maintenance requests found</p>
+                <p className="text-sm">Create a new request to get started</p>
+            </div>
+        );
     }
 
     return (

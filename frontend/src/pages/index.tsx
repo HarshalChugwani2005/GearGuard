@@ -1,10 +1,15 @@
 import Head from 'next/head';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Activity, Calendar, Wrench } from 'lucide-react';
+import { ArrowRight, Activity, Calendar, Wrench, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import { useMyTasks } from '@/hooks/use-my-tasks';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { tasks, isLoading } = useMyTasks();
+
   return (
     <>
       <Head>
@@ -13,7 +18,9 @@ export default function DashboardPage() {
 
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Welcome back, Technician</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Welcome back, {user?.full_name || 'User'}
+          </h1>
           <p className="text-slate-500 mt-2">Here's what's happening in your facility today.</p>
         </div>
 
@@ -21,12 +28,12 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-              <Wrench className="h-4 w-4 text-slate-500" />
+              <CardTitle className="text-sm font-medium">My Tasks</CardTitle>
+              <ClipboardList className="h-4 w-4 text-slate-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
-              <p className="text-xs text-slate-500">+2 since last hour</p>
+              <div className="text-2xl font-bold">{isLoading ? '...' : tasks.length}</div>
+              <p className="text-xs text-slate-500">Assigned to you</p>
             </CardContent>
           </Card>
           <Card>
@@ -50,6 +57,34 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* My Tasks Section */}
+        {tasks.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>My Assigned Tasks</CardTitle>
+              <CardDescription>Tasks assigned to you by admin</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {tasks.slice(0, 5).map((task) => (
+                  <div key={task.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{task.equipment_name || `Request #${task.maintenance_request_id}`}</p>
+                      <p className="text-xs text-slate-500">Department: {task.department}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">Due: {new Date(task.due_date).toLocaleDateString()}</p>
+                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                        {task.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Navigation Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
