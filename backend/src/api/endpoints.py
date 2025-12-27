@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header, Depends
 from src.models.repository import MaintenanceRepository, EquipmentRepository
 from src.models.schemas import (
     StatusUpdate,
@@ -8,6 +8,16 @@ from src.models.schemas import (
 )
 
 router = APIRouter()
+
+
+def require_role(allowed: list[str]):
+    async def checker(x_user_role: str | None = Header(None)):
+        role = (x_user_role or "viewer").lower()
+        if role not in {r.lower() for r in allowed}:
+            raise HTTPException(status_code=403, detail="Forbidden")
+        return role
+
+    return checker
 
 
 @router.get("/health", tags=["health"])
@@ -32,8 +42,13 @@ def maintenance_live():
     return snapshot
 
 
+@router.get("/maintenance-requests", tags=["maintenance"])
+def list_requests(role: str = Depends(require_role(["viewer", "technician", "admin"]))):
+    return MaintenanceRepository.list_requests()
+
+
 @router.put("/maintenance/{request_id}/status", tags=["maintenance"])
-def update_status(request_id: int, payload: StatusUpdate):
+def update_status(request_id: int, payload: StatusUpdate, role: str = Depends(require_role(["technician", "admin"]))):
     try:
         MaintenanceRepository.update_status(request_id, payload.status)
     except Exception as e:

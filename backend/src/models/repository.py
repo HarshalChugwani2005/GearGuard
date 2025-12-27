@@ -46,6 +46,37 @@ class MaintenanceRepository:
         board = MaintenanceRepository.get_kanban_board()
         return {"server_time": datetime.now(timezone.utc), "board": board}
 
+    @staticmethod
+    def list_requests() -> List[dict]:
+        """Return maintenance requests with sensible defaults for frontend."""
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT id, subject, status, priority, equipment_id, description
+                    FROM maintenance_requests
+                    ORDER BY id DESC
+                    """
+                )
+                rows = cur.fetchall()
+
+        results: List[dict] = []
+        for r in rows:
+            results.append(
+                {
+                    "id": r[0],
+                    "subject": r[1],
+                    "status": r[2],
+                    "priority": int(r[3]) if r[3] is not None else 1,
+                    "equipment_id": r[4] if r[4] is not None else 0,
+                    "description": r[5],
+                    "request_type": "Corrective",
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "scheduled_date": None,
+                }
+            )
+        return results
+
 
 class EquipmentRepository:
     @staticmethod
