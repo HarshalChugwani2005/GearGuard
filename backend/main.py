@@ -1,13 +1,27 @@
 import asyncio
 import os
+import sys
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+
+# Ensure backend src is on path for uvicorn entry
+sys.path.insert(0, str(Path(__file__).parent / "src"))
+
 from src.api.endpoints import router
 from src.api.simulator import run_simulator
 
 load_dotenv()
 
 app = FastAPI(title="GearGuard API", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(router, prefix="/api")
 
 stop_event = asyncio.Event()
