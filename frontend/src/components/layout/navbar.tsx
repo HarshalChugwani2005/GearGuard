@@ -1,7 +1,10 @@
 import { Bell, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 const Navbar = () => {
+    const { user } = useAuth();
+
     return (
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">
@@ -26,8 +29,8 @@ const Navbar = () => {
 
                 <div className="flex items-center gap-3 pl-1">
                     <div className="text-right hidden sm:block">
-                        <p className="text-sm font-medium text-slate-900">John Technician</p>
-                        <p className="text-xs text-slate-500">Maintenance Lead</p>
+                        <p className="text-sm font-medium text-slate-900">{user?.full_name || 'Guest'}</p>
+                        <p className="text-xs text-slate-500 capitalize">{user?.role || 'No Role'} • {user?.department || 'N/A'}</p>
                     </div>
                     <div className="h-9 w-9 rounded-full bg-primary-100 flex items-center justify-center border-2 border-primary-200">
                         <User className="h-5 w-5 text-primary-600" />

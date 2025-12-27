@@ -51,15 +51,31 @@ export const useMaintenanceRequests = () => {
         queryKey: ['maintenance_requests'],
         queryFn: async () => {
             try {
-                // Try to fetch from real API
-                const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/maintenance-requests`);
+                // Add cache buster to prevent browser caching across machines
+                const timestamp = Date.now();
+                const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/maintenance-requests?_t=${timestamp}`;
+                
+                // Get token from localStorage for authenticated requests
+                const token = typeof window !== 'undefined' ? localStorage.getItem('gearguard_token') : null;
+                
+                const { data } = await axios.get(url, {
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache',
+                        'X-User-Role': 'viewer', // Default role for backward compatibility
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    }
+                });
                 return data as MaintenanceRequest[];
             } catch (error) {
                 // Fallback to mock data for development
-                console.warn("Backend not reachable, using mock data");
+                console.warn("Backend not reachable, using mock data", error);
                 return MOCK_REQUESTS;
             }
         },
-        refetchInterval: 5000, // Poll every 5s for "Real-Time" feel
+        refetchInterval: 3000, // Poll every 3s for faster cross-machine updates
+        refetchOnWindowFocus: true,
+        refetchOnMount: true,
+        staleTime: 0, // Always consider data stale for fresh fetches
     });
 };

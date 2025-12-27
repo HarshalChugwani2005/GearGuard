@@ -1,30 +1,26 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/router';
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface User {
     id: string;
-    name: string;
-    role: 'Technician' | 'Manager' | 'Admin';
+    full_name: string;
+    role: 'viewer' | 'technician' | 'admin';
     email: string;
-    avatar?: string;
+    department: string;
 }
 
 interface AuthContextType {
     user: User | null;
     login: (email: string, password: string) => Promise<void>;
+    register: (email: string, password: string, full_name: string, role: string, department: string) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock User Data
-const MOCK_USER: User = {
-    id: 'u-123',
-    name: 'John Technician',
-    role: 'Technician',
-    email: 'john@gearguard.com',
-};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -32,41 +28,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
-        // Check local storage on initial load
-        const stored = localStorage.getItem('gearguard_user');
-        if (stored) {
-            setUser(JSON.parse(stored));
+        // Check local storage for token on initial load
+        const token = localStorage.getItem('gearguard_token');
+        if (token) {
+            fetchCurrentUser(token);
+        } else {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     }, []);
+
+    const fetchCurrentUser = async (token: string) => {
+        try {
+            const response = await axios.get(`${API_URL}/api/auth/me`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setUser(response.data);
+        } catch (error) {
+            console.error('Failed to fetch user:', error);
+            localStorage.removeItem('gearguard_token');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const login = async (email: string, password: string) => {
         setIsLoading(true);
-        // Simulate API call
-        return new Promise<void>((resolve, reject) => {
-            setTimeout(() => {
-                if (email && password) { // Any mock logic for now
-                    const activeUser = { ...MOCK_USER, email };
-                    setUser(activeUser);
-                    localStorage.setItem('gearguard_user', JSON.stringify(activeUser));
-                    resolve();
-                    router.push('/');
-                } else {
-                    setIsLoading(false);
-                    reject(new Error("Invalid credentials"));
-                }
-            }, 1000);
-        });
+        try {
+            const response = await axios.post(`${API_URL}/api/auth/login`, {
+                email,
+                password,
+            });
+            const { access_token, user: userData } = response.data;
+            localStorage.setItem('gearguard_token', access_token);
+            setUser(userData);
+            router.push('/');
+        } catch (error) {
+            console.error('Login failed:', error);
+            throw new Error('Invalid credentials');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const register = async (email: string, password: string, full_name: string, role: string, department: string) => {
+        setIsLoading(true);
+        try {
+            const response = await axios.post(`${API_URL}/api/auth/register`, {
+                email,
+                password,
+                full_name,
+                role,
+                department,
+            });
+            const { access_token, user: userData } = response.data;
+            localStorage.setItem('gearguard_token', access_token);
+            setUser(userData);
+            router.push('/');
+        } catch (error) {
+            console.error('Registration failed:', error);
+            throw new Error('Registration failed');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('gearguard_user');
+        localStorage.removeItem('gearguard_token');
         router.push('/login');
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

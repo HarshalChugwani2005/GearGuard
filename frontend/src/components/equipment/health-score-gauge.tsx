@@ -20,16 +20,16 @@ const HealthScoreGauge = ({ score, size = 200, showDetails = true }: HealthScore
 
     return (
         <div className="flex flex-col items-center justify-center">
-            <div style={{ width: size, height: size / 2 + 20 }} className="relative">
-                {/* Semi-circle Gauge */}
+            <div style={{ width: size, height: size }} className="relative">
+                {/* Full Circle Gauge */}
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={data}
                             cx="50%"
-                            cy="100%"
-                            startAngle={180}
-                            endAngle={0}
+                            cy="50%"
+                            startAngle={90}
+                            endAngle={450}
                             innerRadius="60%"
                             outerRadius="90%"
                             paddingAngle={2}
@@ -41,8 +41,8 @@ const HealthScoreGauge = ({ score, size = 200, showDetails = true }: HealthScore
                     </PieChart>
                 </ResponsiveContainer>
 
-                {/* Score Text */}
-                <div className="absolute bottom-0 left-0 right-0 text-center pb-2">
+                {/* Score Text - Centered */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                     <div className="text-3xl font-bold text-slate-700">{score}%</div>
                     <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">Health</div>
                 </div>
