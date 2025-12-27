@@ -28,6 +28,20 @@ class MaintenanceRepository:
                 conn.commit()
 
     @staticmethod
+    def insert_request(subject: str, status: str, priority: str | None, equipment_id: int | None, description: str | None) -> None:
+        """Insert a simulated maintenance request row."""
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO maintenance_requests (subject, status, priority, equipment_id, description)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (subject, status, priority, equipment_id, description),
+                )
+                conn.commit()
+
+    @staticmethod
     def live_snapshot() -> dict:
         board = MaintenanceRepository.get_kanban_board()
         return {"server_time": datetime.now(timezone.utc), "board": board}
